@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多货币汇率转换工具 - 实时API版</title>
+    <title>Multi-Currency Exchange Rate Converter - Real-time API Version</title>
     <style>
-        /* 全局样式 */
+        /* Global styles */
         body {
             font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
             max-width: 1000px;
@@ -25,7 +25,7 @@
             padding-bottom: 15px;
         }
 
-        /* 控制面板 */
+        /* Control panel */
         .control-panel {
             background: white;
             padding: 25px;
@@ -40,7 +40,7 @@
             font-weight: 500;
         }
 
-        /* 表格样式 */
+        /* Table styles */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -70,7 +70,7 @@
             background-color: #f5f7fa;
         }
 
-        /* 输入控件 */
+        /* Input controls */
         input[type="number"], select {
             width: 100%;
             padding: 10px 12px;
@@ -87,7 +87,7 @@
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
         }
 
-        /* 按钮样式 */
+        /* Button styles */
         .action-buttons {
             margin-top: 25px;
             display: flex;
@@ -145,7 +145,7 @@
             background-color: #c0392b;
         }
 
-        /* 状态显示 */
+        /* Status display */
         .status {
             margin-top: 20px;
             padding: 15px;
@@ -164,7 +164,7 @@
             margin-top: 5px;
         }
 
-        /* 数据源标识 */
+        /* API source badge */
         .api-source-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -197,7 +197,7 @@
             color: #616161;
         }
 
-        /* 加载动画 */
+        /* Loading animation */
         .spinner {
             display: inline-block;
             animation: spin 1s linear infinite;
@@ -209,7 +209,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* 通知系统 */
+        /* Notification system */
         .notification {
             position: fixed;
             top: 25px;
@@ -245,7 +245,7 @@
             to { opacity: 0; transform: translateY(-20px); }
         }
 
-        /* 行动画 */
+        /* Row animation */
         .currency-row {
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
@@ -255,7 +255,7 @@
             transform: translateX(50px);
         }
 
-        /* 响应式设计 */
+        /* Responsive design */
         @media (max-width: 768px) {
             body {
                 padding: 15px;
@@ -303,7 +303,7 @@
             }
         }
 
-        /* 打印样式 */
+        /* Print styles */
         @media print {
             .control-panel, .delete-btn {
                 display: none;
@@ -321,45 +321,45 @@
     </style>
 </head>
 <body>
-    <h1>多货币汇率转换工具</h1>
+    <h1>Multi-Currency Exchange Rate Converter</h1>
     
     <div class="control-panel">
-        <h2>汇率控制面板</h2>
+        <h2>Exchange Rate Control Panel</h2>
         <div class="action-buttons">
             <button id="refresh-rates">
                 <span class="spinner" style="display:none;">↻</span>
-                刷新汇率
+                Refresh Rates
             </button>
-            <button id="add-row" class="secondary">+ 添加货币行</button>
+            <button id="add-row" class="secondary">+ Add Currency Row</button>
         </div>
         <div class="status" id="rate-status">
-            正在初始化汇率数据...
+            Initializing exchange rate data...
         </div>
     </div>
 
     <table id="conversion-table">
         <thead>
             <tr>
-                <th width="25%">货币类型</th>
-                <th width="25%">本地金额</th>
-                <th width="25%">美元金额 (USD)</th>
-                <th width="25%">汇率 (1 USD = ?)</th>
+                <th width="25%">Currency</th>
+                <th width="25%">Local Amount</th>
+                <th width="25%">USD Amount</th>
+                <th width="25%">Exchange Rate (1 USD = ?)</th>
             </tr>
         </thead>
         <tbody>
-            <!-- 动态生成的行会在这里 -->
+            <!-- Dynamically generated rows will appear here -->
         </tbody>
     </table>
 
     <script src="app.js"></script>
     
     <script>
-        // 内联初始化逻辑（可选）
+        // Inline initialization logic (optional)
         document.getElementById('add-row').addEventListener('click', function() {
             if (document.querySelectorAll('.currency-row').length >= 10) {
                 const notification = document.createElement('div');
                 notification.className = 'notification warning';
-                notification.textContent = '最多添加10种货币';
+                notification.textContent = 'Maximum 10 currencies allowed';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 3000);
                 return;
