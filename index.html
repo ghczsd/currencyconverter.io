@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多货币汇率转换工具 - 实时API版</title>
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 300;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .control-panel h2 {
+            margin-top: 0;
+            color: #3498db;
+            font-weight: 500;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+
+        tr:hover {
+            background-color: #f5f7fa;
+        }
+
+        /* 输入控件 */
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        /* 按钮样式 */
+        .action-buttons {
+            margin-top: 25px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        button.secondary {
+            background-color: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* 状态显示 */
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.95em;
+            color: #555;
+            line-height: 1.5;
+            border-left: 4px solid #3498db;
+        }
+
+        .status small {
+            color: #7f8c8d;
+            font-size: 0.85em;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* 数据源标识 */
+        .api-source-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-top: 8px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .api-source-badge.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .api-source-badge.cache {
+            background: #fff8e1;
+            color: #ff8f00;
+        }
+
+        .api-source-badge.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .api-source-badge.loading {
+            background: #f5f5f5;
+            color: #616161;
+        }
+
+        /* 加载动画 */
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            font-size: 1.2em;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 通知系统 */
+        .notification {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            background: #2ecc71;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            transform: translateX(200%);
+            animation: slideIn 0.5s forwards;
+            max-width: 300px;
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+
+        .notification.warning {
+            background: #f39c12;
+        }
+
+        @keyframes slideIn {
+            to { transform: translateX(0); }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s forwards;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* 行动画 */
+        .currency-row {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .currency-row.fade-out {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .control-panel {
+                padding: 15px;
+            }
+            
+            th, td {
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+            
+            button {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .notification {
+                top: 15px;
+                right: 15px;
+                max-width: calc(100% - 30px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            th, td {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+            
+            input[type="number"], select {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* 打印样式 */
+        @media print {
+            .control-panel, .delete-btn {
+                display: none;
+            }
+            
+            table {
+                box-shadow: none;
+            }
+            
+            th {
+                background-color: white !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>多货币汇率转换工具</h1>
+    
+    <div class="control-panel">
+        <h2>汇率控制面板</h2>
+        <div class="action-buttons">
+            <button id="refresh-rates">
+                <span class="spinner" style="display:none;">↻</span>
+                刷新汇率
+            </button>
+            <button id="add-row" class="secondary">+ 添加货币行</button>
+        </div>
+        <div class="status" id="rate-status">
+            正在初始化汇率数据...
+        </div>
+    </div>
+
+    <table id="conversion-table">
+        <thead>
+            <tr>
+                <th width="25%">货币类型</th>
+                <th width="25%">本地金额</th>
+                <th width="25%">美元金额 (USD)</th>
+                <th width="25%">汇率 (1 USD = ?)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 动态生成的行会在这里 -->
+        </tbody>
+    </table>
+
+    <script src="app.js"></script>
+    
+    <script>
+        // 内联初始化逻辑（可选）
+        document.getElementById('add-row').addEventListener('click', function() {
+            if (document.querySelectorAll('.currency-row').length >= 10) {
+                const notification = document.createElement('div');
+                notification.className = 'notification warning';
+                notification.textContent = '最多添加10种货币';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+                return;
+            }
+        });
+    </script>
+</body>
+</html>
