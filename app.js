@@ -59,8 +59,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // ======================
     // DOM Elements
     // ======================
-    const refreshBtn = document.getElementById('refresh-rates');
-    const addRowBtn = document.getElementById('add-row');
+    let refreshBtn = document.getElementById('refresh-rates');
+    let addRowBtn = document.getElementById('add-row');
     const conversionTable = document.querySelector('#conversion-table tbody');
     const rateStatus = document.getElementById('rate-status');
     const loadingRow = document.getElementById('loading-row');
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 1. Try to load cached data
             await loadCachedData();
             
-            // 2. If cache is empty, set initial values for default currencies
+            // 2. If cache is empty, set initial values
             if (Object.keys(exchangeRates).length === 0) {
                 DEFAULT_CURRENCIES.forEach(code => {
                     exchangeRates[code] = getFallbackRate(code);
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!rates) throw new Error("All API sources unavailable");
             
-            // Merge new rates (preserve existing currency values)
+            // Merge new rates (preserve existing values)
             Object.keys(exchangeRates).forEach(code => {
                 if (rates[code]) exchangeRates[code] = rates[code];
             });
@@ -157,9 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchFromApi(api) {
         const response = await fetch(api.url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const data = await response.json();
-        return api.parser(data);
+        return api.parser(await response.json());
     }
 
     /**
@@ -180,10 +178,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ======================
 
     /**
-     * Set up default currency rows to display
+     * Set up default currency rows
      */
     function setupDefaultRows() {
-        // Ensure we only add non-existing currency rows
         const existingCurrencies = new Set(
             Array.from(document.querySelectorAll('.currency-select'))
                 .map(select => select.value)
@@ -195,32 +192,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Ensure at least one row exists
         if (conversionTable.querySelectorAll('.currency-row').length === 0) {
             addNewRow('CNY');
         }
     }
 
     /**
-     * Add new currency row (fully refactored version)
+     * Add new currency row (fixed version)
      */
     function addNewRow(currencyCode = 'CNY') {
         try {
-            // 1. Check row limit
+            // Check row limit
             const currentRows = document.querySelectorAll('.currency-row').length;
             if (currentRows >= MAX_ROWS) {
                 showNotification(`Maximum ${MAX_ROWS} currencies allowed`, 'warning');
                 return false;
             }
 
-            // 2. Validate currency code
+            // Validate currency code
             const validCodes = CURRENCY_OPTIONS.map(c => c.code);
             if (!validCodes.includes(currencyCode)) {
                 currencyCode = 'CNY';
                 console.warn(`Invalid currency code, using default: ${currencyCode}`);
             }
 
-            // 3. Create row element
+            // Create row element
             const row = document.createElement('tr');
             row.className = 'currency-row';
             row.innerHTML = `
@@ -242,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
             `;
 
-            // 4. Add event listeners
+            // Add event listeners
             const select = row.querySelector('.currency-select');
             const input = row.querySelector('.amount-input');
             const deleteBtn = row.querySelector('.delete-btn');
@@ -254,36 +250,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => row.remove(), 300);
             });
 
-            // 5. Add to table (ensure tbody exists)
-            const tbody = document.querySelector('#conversion-table tbody');
-            if (!tbody) {
-                throw new Error('Table tbody element not found');
+            // Add to table
+            if (!conversionTable) {
+                throw new Error('Table body not found');
             }
-            tbody.appendChild(row);
+            conversionTable.appendChild(row);
 
-            // 6. Initial calculation
+            // Initial calculation
             updateRow(row);
             
-            // 7. Auto-focus input
+            // Auto-focus input
             setTimeout(() => input.focus(), 50);
             
             return true;
         } catch (error) {
             console.error('Failed to add currency row:', error);
-            showNotification('Failed to add currency, please refresh', 'error');
+            showNotification('Failed to add currency row', 'error');
             return false;
         }
-    }
-
-    // Modify initial event binding
-    function bindEvents() {
-        // Remove old event listeners (avoid duplicate binding)
-        addRowBtn.removeEventListener('click', addNewRow);
-        
-        // Add new event listeners
-        addRowBtn.addEventListener('click', () => {
-            addNewRow();
-        });
     }
 
     /**
@@ -300,16 +284,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const rate = exchangeRates[currencyCode] || getFallbackRate(currencyCode);
         const currency = CURRENCY_OPTIONS.find(c => c.code === currencyCode);
         
-        // Update rate display
         if (currency) {
             rateCell.innerHTML = `
                 <div>1 USD = <strong>${currency.symbol}${rate.toFixed(4)}</strong></div>
                 <small style="color:#666">1 ${currency.code} ≈ ${(1/rate).toFixed(6)} USD</small>
             `;
-            
-            // Calculate USD amount
-            const usdAmount = amount / rate;
-            usdCell.textContent = usdAmount.toFixed(2);
+            usdCell.textContent = (amount / rate).toFixed(2);
         } else {
             rateCell.textContent = 'Currency not configured';
             usdCell.textContent = '-';
@@ -369,6 +349,26 @@ document.addEventListener('DOMContentLoaded', function() {
         spinner.className = 'spinner';
         spinner.style.display = 'none';
         refreshBtn.prepend(spinner);
+        
+        // Fix event listeners
+        bindEvents();
+    }
+
+    function bindEvents() {
+        // Clone and replace button to prevent duplicate listeners
+        const newAddBtn = addRowBtn.cloneNode(true);
+        addRowBtn.parentNode.replaceChild(newAddBtn, addRowBtn);
+        addRowBtn = newAddBtn;
+
+        // Add fresh event listener
+        addRowBtn.addEventListener('click', function() {
+            if (!addNewRow()) {
+                console.log('Add row operation failed');
+            }
+        });
+
+        // Refresh button
+        refreshBtn.addEventListener('click', handleRefresh);
     }
 
     function showLoading(show) {
@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ======================
     initApp();
 
-    // Ensure default rows exist (double check)
+    // Double check default rows
     setTimeout(() => {
         if (conversionTable.querySelectorAll('.currency-row').length === 0) {
             DEFAULT_CURRENCIES.forEach(code => addNewRow(code));
